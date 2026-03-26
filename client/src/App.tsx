@@ -14,7 +14,6 @@ import Articles from "@/pages/articles";
 import ArticleDetail from "@/pages/article-detail";
 import UploadPage from "@/pages/upload-page";
 import StaffPage from "@/pages/staff-page";
-import PhotosPage from "@/pages/photos-page";
 import IssuesPage from "@/pages/issues-page";
 import AssignmentsPage from "@/pages/assignments-page";
 import MessagesPage from "@/pages/messages-page";
@@ -31,7 +30,6 @@ function AppRouter() {
       <Route path="/articles/:id" component={ArticleDetail} />
       <Route path="/upload" component={UploadPage} />
       <Route path="/staff" component={StaffPage} />
-      <Route path="/photos" component={PhotosPage} />
       <Route path="/issues" component={IssuesPage} />
       <Route path="/assignments" component={AssignmentsPage} />
       <Route path="/messages" component={MessagesPage} />

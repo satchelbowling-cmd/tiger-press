@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, FileText, Users, Camera, Calendar, ClipboardList,
+  LayoutDashboard, FileText, Users, Calendar, ClipboardList,
   Upload, MessageSquare, Shield,
 } from "lucide-react";
 import { useHashLocation } from "wouter/use-hash-location";
@@ -26,7 +26,6 @@ const navItems = [
   { title: "Assignments", url: "/assignments", icon: ClipboardList },
   { title: "Messages", url: "/messages", icon: MessageSquare },
   { title: "Staff", url: "/staff", icon: Users, adminOnly: true },
-  { title: "Photos", url: "/photos", icon: Camera },
   { title: "Issues", url: "/issues", icon: Calendar },
 ];
 
