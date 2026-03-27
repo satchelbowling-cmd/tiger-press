@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Sparkles, Check, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Sparkles, Check, Loader2, Trash2, Download } from "lucide-react";
 import { Link, useRoute, useLocation } from "wouter";
 import type { Article, Staff } from "@shared/schema";
 
@@ -59,7 +59,10 @@ export default function ArticleDetail() {
 
   const proofreadMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/articles/${id}/proofread`);
+      const res = await fetch(
+        ("__PORT_5000__".startsWith("__") ? "" : "__PORT_5000__") + `/api/articles/${id}/proofread`,
+        { method: "POST" }
+      );
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || "Proofreading failed");
@@ -83,6 +86,20 @@ export default function ArticleDetail() {
 
   const editors = staffList?.filter(s => s.role === "editor" || s.role === "editor-in-chief") ?? [];
 
+  const handleDownload = () => {
+    if (!article) return;
+    const text = article.proofreadContent || article.content || "";
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${article.title.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()}_final.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <div className="p-6 max-w-4xl mx-auto space-y-4">
@@ -104,10 +121,11 @@ export default function ArticleDetail() {
   }
 
   const changeLog = article.changeLog ? JSON.parse(article.changeLog) as Array<{
-    original: string;
-    corrected: string;
-    reason: string;
+    original: string; corrected: string; reason: string;
   }> : [];
+
+  const isFinal = article.status === "approved" || article.status === "published";
+  const hasProofread = !!article.proofreadContent;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -131,27 +149,20 @@ export default function ArticleDetail() {
           {article.status}
         </Badge>
         {isAdmin && (
-          <Button
-            variant="ghost" size="icon"
-            onClick={() => deleteMutation.mutate()}
-            className="shrink-0 text-muted-foreground hover:text-destructive"
-            data-testid="button-delete-article"
-          >
+          <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate()}
+            className="shrink-0 text-muted-foreground hover:text-destructive" data-testid="button-delete-article">
             <Trash2 className="w-4 h-4" />
           </Button>
         )}
       </div>
 
-      {/* Status + Editor controls */}
+      {/* Controls */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex-1 min-w-[150px]">
               <label className="text-xs text-muted-foreground font-medium mb-1 block">Status</label>
-              <Select
-                value={article.status}
-                onValueChange={(val) => updateMutation.mutate({ status: val })}
-              >
+              <Select value={article.status} onValueChange={(val) => updateMutation.mutate({ status: val })}>
                 <SelectTrigger data-testid="select-article-status"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {statuses.map(s => <SelectItem key={s} value={s}>{s.replace("-", " ")}</SelectItem>)}
@@ -160,10 +171,8 @@ export default function ArticleDetail() {
             </div>
             <div className="flex-1 min-w-[150px]">
               <label className="text-xs text-muted-foreground font-medium mb-1 block">Assigned Editor</label>
-              <Select
-                value={article.editorId ? String(article.editorId) : "none"}
-                onValueChange={(val) => updateMutation.mutate({ editorId: val === "none" ? null : Number(val) })}
-              >
+              <Select value={article.editorId ? String(article.editorId) : "none"}
+                onValueChange={(val) => updateMutation.mutate({ editorId: val === "none" ? null : Number(val) })}>
                 <SelectTrigger data-testid="select-article-editor"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Unassigned</SelectItem>
@@ -172,11 +181,9 @@ export default function ArticleDetail() {
               </Select>
             </div>
             <div className="flex items-end gap-2 pt-4">
-              <Button
-                onClick={() => proofreadMutation.mutate()}
+              <Button onClick={() => proofreadMutation.mutate()}
                 disabled={proofreadMutation.isPending || article.status === "published"}
-                data-testid="button-proofread"
-              >
+                data-testid="button-proofread">
                 {proofreadMutation.isPending ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Proofreading...</>
                 ) : (
@@ -184,21 +191,14 @@ export default function ArticleDetail() {
                 )}
               </Button>
               {(article.status === "proofread" || article.status === "approved") && isAdmin && (
-                <Button
-                  variant="secondary"
-                  onClick={() => updateMutation.mutate({ status: article.status === "proofread" ? "approved" : "published" })}
-                  data-testid="button-advance-status"
-                >
+                <Button variant="secondary" data-testid="button-advance-status"
+                  onClick={() => updateMutation.mutate({ status: article.status === "proofread" ? "approved" : "published" })}>
                   <Check className="w-4 h-4 mr-2" />
                   {article.status === "proofread" ? "Approve" : "Publish"}
                 </Button>
               )}
               {article.status === "proofread" && isEditor && !isAdmin && (
-                <Button
-                  variant="secondary"
-                  onClick={() => updateMutation.mutate({ status: "approved" })}
-                  data-testid="button-approve"
-                >
+                <Button variant="secondary" onClick={() => updateMutation.mutate({ status: "approved" })} data-testid="button-approve">
                   <Check className="w-4 h-4 mr-2" /> Approve
                 </Button>
               )}
@@ -231,10 +231,21 @@ export default function ArticleDetail() {
         </Card>
       )}
 
-      {/* Article content */}
-      <Card>
+      {/* Article content — with Final Version label and download */}
+      <Card className={isFinal ? "border-green-500/30" : ""}>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">Article Content</CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold">
+                {hasProofread ? "Final Version" : "Article Content"}
+              </CardTitle>
+              {isFinal && <Badge variant="default" className="text-xs bg-green-600">Final</Badge>}
+              {hasProofread && !isFinal && <Badge variant="secondary" className="text-xs">Proofread</Badge>}
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleDownload} className="text-xs h-7" data-testid="button-download-article">
+              <Download className="w-3 h-3 mr-1" /> Download .txt
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
           <Textarea
@@ -245,6 +256,23 @@ export default function ArticleDetail() {
           />
         </CardContent>
       </Card>
+
+      {/* Original content (if proofread version exists) */}
+      {hasProofread && article.content && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-muted-foreground">Original Submission</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <Textarea
+              value={article.content}
+              rows={8} readOnly
+              className="font-serif text-sm leading-relaxed opacity-70"
+              data-testid="textarea-original-content"
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Notes */}
       <Card>

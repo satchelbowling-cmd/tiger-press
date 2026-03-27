@@ -222,9 +222,12 @@ export async function registerRoutes(server: Server, app: Express) {
         changes = [{ original: "(full article)", corrected: "(see corrected text)", reason: "AI proofreading applied" }];
       }
 
+      // Normalize line breaks: collapse 3+ newlines to 2 (one blank line per paragraph)
+      const cleanedText = correctedText.replace(/\n{3,}/g, "\n\n").trim();
+
       const updated = storage.updateArticle(Number(req.params.id), {
         status: "proofread",
-        proofreadContent: correctedText,
+        proofreadContent: cleanedText,
         changeLog: JSON.stringify(changes),
       });
 
