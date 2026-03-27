@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,15 +8,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Sparkles, Check, Loader2 } from "lucide-react";
-import { Link, useRoute } from "wouter";
+import { ArrowLeft, Sparkles, Check, Loader2, Trash2 } from "lucide-react";
+import { Link, useRoute, useLocation } from "wouter";
 import type { Article, Staff } from "@shared/schema";
 
 const statuses = ["submitted", "in-review", "proofread", "approved", "published"];
 
 export default function ArticleDetail() {
   const { toast } = useToast();
+  const { isAdmin, isEditor } = useAuth();
   const [, params] = useRoute("/articles/:id");
+  const [, navigate] = useLocation();
   const id = params?.id;
 
   const { data: article, isLoading } = useQuery<Article>({
@@ -42,15 +45,34 @@ export default function ArticleDetail() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/articles/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/articles"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      toast({ title: "Article deleted" });
+      navigate("/articles");
+    },
+  });
+
   const proofreadMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", `/api/articles/${id}/proofread`);
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Proofreading failed");
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/articles", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/articles"] });
       toast({ title: "Proofreading complete", description: "Review the change log below" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Proofreading failed", description: err.message, variant: "destructive" });
     },
   });
 
@@ -108,6 +130,16 @@ export default function ArticleDetail() {
         <Badge variant="secondary" className="text-xs shrink-0" data-testid="badge-article-status">
           {article.status}
         </Badge>
+        {isAdmin && (
+          <Button
+            variant="ghost" size="icon"
+            onClick={() => deleteMutation.mutate()}
+            className="shrink-0 text-muted-foreground hover:text-destructive"
+            data-testid="button-delete-article"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        )}
       </div>
 
       {/* Status + Editor controls */}
@@ -151,7 +183,17 @@ export default function ArticleDetail() {
                   <><Sparkles className="w-4 h-4 mr-2" /> Proofread</>
                 )}
               </Button>
-              {article.status === "proofread" && (
+              {(article.status === "proofread" || article.status === "approved") && isAdmin && (
+                <Button
+                  variant="secondary"
+                  onClick={() => updateMutation.mutate({ status: article.status === "proofread" ? "approved" : "published" })}
+                  data-testid="button-advance-status"
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  {article.status === "proofread" ? "Approve" : "Publish"}
+                </Button>
+              )}
+              {article.status === "proofread" && isEditor && !isAdmin && (
                 <Button
                   variant="secondary"
                   onClick={() => updateMutation.mutate({ status: "approved" })}
@@ -197,8 +239,7 @@ export default function ArticleDetail() {
         <CardContent className="pt-0">
           <Textarea
             value={article.proofreadContent || article.content || ""}
-            rows={12}
-            readOnly
+            rows={12} readOnly
             className="font-serif text-sm leading-relaxed"
             data-testid="textarea-article-content"
           />

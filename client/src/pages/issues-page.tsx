@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,13 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Calendar } from "lucide-react";
+import { Plus, Calendar, Trash2 } from "lucide-react";
 import type { Issue } from "@shared/schema";
 
 const issueStatuses = ["planning", "in-progress", "review", "published"];
 
 export default function IssuesPage() {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: issues, isLoading } = useQuery<Issue[]>({ queryKey: ["/api/issues"] });
@@ -45,6 +47,17 @@ export default function IssuesPage() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/issues/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/issues"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      toast({ title: "Issue deleted" });
+    },
+  });
+
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -59,11 +72,11 @@ export default function IssuesPage() {
 
   const statusColor = (status: string) => {
     switch (status) {
-      case "planning": return "secondary";
-      case "in-progress": return "default";
-      case "review": return "outline";
-      case "published": return "default";
-      default: return "secondary";
+      case "planning": return "secondary" as const;
+      case "in-progress": return "default" as const;
+      case "review": return "outline" as const;
+      case "published": return "default" as const;
+      default: return "secondary" as const;
     }
   };
 
@@ -129,15 +142,27 @@ export default function IssuesPage() {
                       {issue.notes && <span>· {issue.notes}</span>}
                     </div>
                   </div>
-                  <Select
-                    value={issue.status}
-                    onValueChange={(val) => updateMutation.mutate({ id: issue.id, data: { status: val } })}
-                  >
-                    <SelectTrigger className="w-[130px]" data-testid={`select-issue-status-${issue.id}`}><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {issueStatuses.map(s => <SelectItem key={s} value={s}>{s.replace("-", " ")}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Select
+                      value={issue.status}
+                      onValueChange={(val) => updateMutation.mutate({ id: issue.id, data: { status: val } })}
+                    >
+                      <SelectTrigger className="w-[130px]" data-testid={`select-issue-status-${issue.id}`}><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {issueStatuses.map(s => <SelectItem key={s} value={s}>{s.replace("-", " ")}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {isAdmin && (
+                      <Button
+                        variant="ghost" size="icon"
+                        onClick={() => deleteMutation.mutate(issue.id)}
+                        className="text-muted-foreground hover:text-destructive"
+                        data-testid={`button-delete-issue-${issue.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -31,6 +31,7 @@ export interface IStorage {
   getIssueById(id: number): Issue | undefined;
   createIssue(data: InsertIssue): Issue;
   updateIssue(id: number, data: Partial<InsertIssue>): Issue | undefined;
+  deleteIssue(id: number): void;
   getAssignments(): Assignment[];
   createAssignment(data: InsertAssignment): Assignment;
   updateAssignment(id: number, data: Partial<InsertAssignment>): Assignment | undefined;
@@ -64,6 +65,7 @@ export class DatabaseStorage implements IStorage {
   getIssueById(id: number): Issue | undefined { return db.select().from(issues).where(eq(issues.id, id)).get(); }
   createIssue(data: InsertIssue): Issue { return db.insert(issues).values(data).returning().get(); }
   updateIssue(id: number, data: Partial<InsertIssue>): Issue | undefined { return db.update(issues).set(data).where(eq(issues.id, id)).returning().get(); }
+  deleteIssue(id: number): void { db.delete(issues).where(eq(issues.id, id)).run(); }
 
   getAssignments(): Assignment[] { return db.select().from(assignments).orderBy(desc(assignments.createdAt)).all(); }
   createAssignment(data: InsertAssignment): Assignment { return db.insert(assignments).values(data).returning().get(); }

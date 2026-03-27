@@ -182,6 +182,9 @@ export async function registerRoutes(server: Server, app: Express) {
     if (!article.content || article.content.trim().length === 0) {
       return res.status(400).json({ error: "Article has no content to proofread" });
     }
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: "ANTHROPIC_API_KEY not configured. Add it in Railway Variables." });
+    }
 
     try {
       const message = await anthropic.messages.create({
@@ -248,6 +251,10 @@ export async function registerRoutes(server: Server, app: Express) {
     const i = storage.updateIssue(Number(req.params.id), req.body);
     if (!i) return res.status(404).json({ error: "Not found" });
     res.json(i);
+  });
+  app.delete("/api/issues/:id", (req, res) => {
+    storage.deleteIssue(Number(req.params.id));
+    res.status(204).send();
   });
 
   // ─── Assignments ───
