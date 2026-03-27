@@ -15,6 +15,13 @@ import { Plus, Users, KeyRound, Shield, CheckCircle } from "lucide-react";
 import type { Staff } from "@shared/schema";
 
 const roles = ["writer", "editor", "editor-in-chief", "photographer", "designer"];
+const chatSections = [
+  { value: "news", label: "News" },
+  { value: "opinion", label: "Opinion" },
+  { value: "sports", label: "Sports" },
+  { value: "arts", label: "Arts & Culture" },
+  { value: "campus-life", label: "Campus Life" },
+];
 const sections = ["news", "opinion", "sports", "arts", "campus-life"];
 
 type StaffWithCreds = Staff & { hasPassword?: boolean };
@@ -71,6 +78,17 @@ export default function StaffPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
       toast({ title: "Role updated" });
+    },
+  });
+
+  const updateSection = useMutation({
+    mutationFn: async ({ id, section }: { id: number; section: string | null }) => {
+      const res = await apiRequest("PATCH", `/api/staff/${id}`, { section });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
+      toast({ title: "Chat group updated" });
     },
   });
 
@@ -268,6 +286,18 @@ export default function StaffPage() {
                           </SelectTrigger>
                           <SelectContent>
                             {roles.map(r => <SelectItem key={r} value={r}>{r.replace("-", " ")}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={member.section || "none"}
+                          onValueChange={(val) => updateSection.mutate({ id: member.id, section: val === "none" ? null : val })}
+                        >
+                          <SelectTrigger className="w-[120px] h-8 text-xs" data-testid={`select-section-${member.id}`}>
+                            <SelectValue placeholder="No group" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No group</SelectItem>
+                            {chatSections.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                           </SelectContent>
                         </Select>
                         <Button

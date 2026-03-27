@@ -18,6 +18,7 @@ const sectionOptions = [
   { value: "news", label: "News" },
   { value: "life", label: "Life" },
   { value: "opinion", label: "Opinion" },
+  { value: "sports", label: "Sports" },
   { value: "other", label: "Other" },
 ];
 
