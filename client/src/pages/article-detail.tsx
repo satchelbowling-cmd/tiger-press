@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Sparkles, Check, Loader2, Trash2, Download } from "lucide-react";
 import { Link, useRoute, useLocation } from "wouter";
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import type { Article, Staff } from "@shared/schema";
 
 const statuses = ["submitted", "in-review", "proofread", "approved", "published"];
@@ -86,14 +87,51 @@ export default function ArticleDetail() {
 
   const editors = staffList?.filter(s => s.role === "editor" || s.role === "editor-in-chief") ?? [];
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!article) return;
     const text = article.proofreadContent || article.content || "";
-    const blob = new Blob([text], { type: "text/plain" });
+    const paragraphs = text.split(/\n\n+/).filter(p => p.trim());
+
+    const doc = new Document({
+      styles: {
+        default: {
+          document: {
+            run: {
+              font: "Minion Pro",
+              size: 28, // 14pt in half-points
+              bold: false,
+              italics: false,
+            },
+            paragraph: {
+              spacing: { line: 300, after: 300 }, // 15pt leading, 15pt after
+              alignment: AlignmentType.JUSTIFIED,
+              indent: { firstLine: 360 }, // 0.25 inches in twips
+            },
+          },
+        },
+      },
+      sections: [{
+        properties: {},
+        children: paragraphs.map(p => new Paragraph({
+          children: [
+            new TextRun({
+              text: p.trim(),
+              font: "Minion Pro",
+              size: 28,
+              bold: false,
+              italics: false,
+            }),
+          ],
+        })),
+      }],
+    });
+
+    const blob = await Packer.toBlob(doc);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${article.title.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()}_final.txt`;
+    const safeName = article.title.replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_").toLowerCase();
+    a.download = `final_${safeName}.docx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -243,7 +281,7 @@ export default function ArticleDetail() {
               {hasProofread && !isFinal && <Badge variant="secondary" className="text-xs">Proofread</Badge>}
             </div>
             <Button variant="ghost" size="sm" onClick={handleDownload} className="text-xs h-7" data-testid="button-download-article">
-              <Download className="w-3 h-3 mr-1" /> Download .txt
+              <Download className="w-3 h-3 mr-1" /> Download .docx
             </Button>
           </div>
         </CardHeader>
