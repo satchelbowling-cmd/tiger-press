@@ -37,7 +37,8 @@ export default function MessagesPage() {
       return res.json();
     },
     enabled: !!activeChannel,
-    refetchInterval: 5000,
+    refetchInterval: 3000,
+    staleTime: 0,
   });
 
   // Get current user's preferred sections from staff data
@@ -81,7 +82,7 @@ export default function MessagesPage() {
     },
     onSuccess: () => {
       setNewMessage("");
-      refetchMessages();
+      queryClient.invalidateQueries({ queryKey: ["/api/channels", activeChannel, "messages"] });
     },
   });
 
@@ -90,7 +91,9 @@ export default function MessagesPage() {
       const res = await apiRequest("PATCH", `/api/messages/${id}`, { pinned });
       return res.json();
     },
-    onSuccess: () => refetchMessages(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/channels", activeChannel, "messages"] });
+    },
   });
 
   const createAnnouncementMutation = useMutation({
