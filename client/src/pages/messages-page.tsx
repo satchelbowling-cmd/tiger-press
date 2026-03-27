@@ -40,11 +40,19 @@ export default function MessagesPage() {
     refetchInterval: 5000,
   });
 
-  // Filter channels: user sees their section + all-staff, admin sees all
+  // Get current user's preferred sections from staff data
+  const currentStaff = staffList?.find(s => s.id === user?.id);
+  const userSections: string[] = (() => {
+    try {
+      return currentStaff?.preferredSections ? JSON.parse(currentStaff.preferredSections) : [];
+    } catch { return []; }
+  })();
+
+  // Filter channels: user sees chats matching their preferred sections + all-staff, admin sees all
   const visibleChannels = channels?.filter(ch => {
     if (isAdmin) return true;
     if (ch.type === "all-staff") return true;
-    if (ch.section === user?.section) return true;
+    if (ch.section && userSections.includes(ch.section)) return true;
     return false;
   }) ?? [];
 

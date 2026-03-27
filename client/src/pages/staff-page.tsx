@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Users, KeyRound, Shield, CheckCircle } from "lucide-react";
 import type { Staff } from "@shared/schema";
@@ -17,12 +19,12 @@ import type { Staff } from "@shared/schema";
 const roles = ["writer", "editor", "editor-in-chief", "photographer", "designer"];
 const chatSections = [
   { value: "news", label: "News" },
+  { value: "life", label: "Life" },
   { value: "opinion", label: "Opinion" },
   { value: "sports", label: "Sports" },
-  { value: "arts", label: "Arts & Culture" },
-  { value: "campus-life", label: "Campus Life" },
+  { value: "other", label: "Other" },
 ];
-const sections = ["news", "opinion", "sports", "arts", "campus-life"];
+
 
 type StaffWithCreds = Staff & { hasPassword?: boolean };
 
@@ -81,16 +83,32 @@ export default function StaffPage() {
     },
   });
 
-  const updateSection = useMutation({
-    mutationFn: async ({ id, section }: { id: number; section: string | null }) => {
-      const res = await apiRequest("PATCH", `/api/staff/${id}`, { section });
+  const updateChatGroups = useMutation({
+    mutationFn: async ({ id, preferredSections }: { id: number; preferredSections: string[] }) => {
+      const res = await apiRequest("PATCH", `/api/staff/${id}`, {
+        preferredSections: JSON.stringify(preferredSections),
+      });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/staff"] });
-      toast({ title: "Chat group updated" });
+      toast({ title: "Chat groups updated" });
     },
   });
+
+  const getMemberSections = (member: StaffWithCreds): string[] => {
+    try {
+      return member.preferredSections ? JSON.parse(member.preferredSections as string) : [];
+    } catch { return []; }
+  };
+
+  const toggleMemberSection = (member: StaffWithCreds, section: string) => {
+    const current = getMemberSections(member);
+    const updated = current.includes(section)
+      ? current.filter(s => s !== section)
+      : [...current, section];
+    updateChatGroups.mutate({ id: member.id, preferredSections: updated });
+  };
 
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ id, newPassword }: { id: number; newPassword: string }) => {
@@ -183,11 +201,11 @@ export default function StaffPage() {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="section">Section</Label>
+                    <Label htmlFor="section">Chat Group</Label>
                     <Select name="section">
                       <SelectTrigger data-testid="select-staff-section"><SelectValue placeholder="None" /></SelectTrigger>
                       <SelectContent>
-                        {sections.map(s => <SelectItem key={s} value={s}>{s.replace("-", " ")}</SelectItem>)}
+                        {chatSections.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -270,7 +288,9 @@ export default function StaffPage() {
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
                       <span>{member.email}</span>
-                      {member.section && <span className="capitalize">{member.section.replace("-", " ")} section</span>}
+                      {getMemberSections(member).length > 0 && (
+                        <span className="capitalize">{getMemberSections(member).join(", ")}</span>
+                      )}
                     </div>
                   </div>
 
@@ -288,18 +308,27 @@ export default function StaffPage() {
                             {roles.map(r => <SelectItem key={r} value={r}>{r.replace("-", " ")}</SelectItem>)}
                           </SelectContent>
                         </Select>
-                        <Select
-                          value={member.section || "none"}
-                          onValueChange={(val) => updateSection.mutate({ id: member.id, section: val === "none" ? null : val })}
-                        >
-                          <SelectTrigger className="w-[120px] h-8 text-xs" data-testid={`select-section-${member.id}`}>
-                            <SelectValue placeholder="No group" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">No group</SelectItem>
-                            {chatSections.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 text-xs w-[120px] justify-start" data-testid={`button-chats-${member.id}`}>
+                              {getMemberSections(member).length > 0
+                                ? `${getMemberSections(member).length} chats`
+                                : "No chats"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-44 p-2" align="start">
+                            <p className="text-xs font-medium text-muted-foreground mb-2 px-1">Chat Groups</p>
+                            {chatSections.map(s => (
+                              <label key={s.value} className="flex items-center gap-2 px-1 py-1.5 cursor-pointer hover:bg-muted rounded-sm text-sm">
+                                <Checkbox
+                                  checked={getMemberSections(member).includes(s.value)}
+                                  onCheckedChange={() => toggleMemberSection(member, s.value)}
+                                />
+                                {s.label}
+                              </label>
+                            ))}
+                          </PopoverContent>
+                        </Popover>
                         <Button
                           variant="ghost" size="sm"
                           onClick={() => openResetDialog(member)}

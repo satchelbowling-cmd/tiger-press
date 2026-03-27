@@ -161,7 +161,8 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <div>
-            <Label className="mb-2 block">Preferred Sections</Label>
+            <Label className="mb-1 block">Preferred Sections</Label>
+            <p className="text-xs text-muted-foreground mb-2">You'll be added to the chat group for each section you select.</p>
             <div className="flex flex-wrap gap-3">
               {sectionOptions.map(s => (
                 <label key={s.value} className="flex items-center gap-2 cursor-pointer" data-testid={`checkbox-section-${s.value}`}>

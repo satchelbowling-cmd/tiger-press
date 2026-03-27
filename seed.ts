@@ -25,14 +25,14 @@ async function seed() {
 
   const createdStaff = staffData.map(s => db.insert(staff).values(s).returning().get());
 
-  // Seed channels
+  // Seed channels — match preferred section options
   const channelData = [
     { name: "All Staff", type: "all-staff", section: null, createdAt: "2026-01-15T00:00:00Z" },
     { name: "News", type: "section", section: "news", createdAt: "2026-01-15T00:00:00Z" },
+    { name: "Life", type: "section", section: "life", createdAt: "2026-01-15T00:00:00Z" },
     { name: "Opinion", type: "section", section: "opinion", createdAt: "2026-01-15T00:00:00Z" },
     { name: "Sports", type: "section", section: "sports", createdAt: "2026-01-15T00:00:00Z" },
-    { name: "Arts & Culture", type: "section", section: "arts", createdAt: "2026-01-15T00:00:00Z" },
-    { name: "Campus Life", type: "section", section: "campus-life", createdAt: "2026-01-15T00:00:00Z" },
+    { name: "Other", type: "section", section: "other", createdAt: "2026-01-15T00:00:00Z" },
   ];
   const createdChannels = channelData.map(c => db.insert(channels).values(c).returning().get());
 
