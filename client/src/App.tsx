@@ -17,6 +17,9 @@ import StaffPage from "@/pages/staff-page";
 import IssuesPage from "@/pages/issues-page";
 import AssignmentsPage from "@/pages/assignments-page";
 import MessagesPage from "@/pages/messages-page";
+import ProfilePage from "@/pages/profile-page";
+import DeadlinesPage from "@/pages/deadlines-page";
+import AnalyticsPage from "@/pages/analytics-page";
 import NotFound from "@/pages/not-found";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +36,9 @@ function AppRouter() {
       <Route path="/issues" component={IssuesPage} />
       <Route path="/assignments" component={AssignmentsPage} />
       <Route path="/messages" component={MessagesPage} />
+      <Route path="/profile" component={ProfilePage} />
+      <Route path="/deadlines" component={DeadlinesPage} />
+      <Route path="/analytics" component={AnalyticsPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -40,10 +46,7 @@ function AppRouter() {
 
 function AuthenticatedApp() {
   const { user, logout, isAdmin } = useAuth();
-  const style = {
-    "--sidebar-width": "16rem",
-    "--sidebar-width-icon": "3rem",
-  };
+  const style = { "--sidebar-width": "16rem", "--sidebar-width-icon": "3rem" };
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
@@ -51,14 +54,10 @@ function AuthenticatedApp() {
         <AppSidebar />
         <div className="flex flex-col flex-1 min-w-0">
           <header className="flex items-center justify-between gap-2 px-4 py-2 border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger data-testid="button-sidebar-toggle" />
-            </div>
+            <SidebarTrigger data-testid="button-sidebar-toggle" />
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground hidden sm:inline">{user?.name}</span>
-                {isAdmin && <Badge variant="default" className="text-xs">Admin</Badge>}
-              </div>
+              <span className="text-xs text-muted-foreground hidden sm:inline">{user?.name}</span>
+              {isAdmin && <Badge variant="default" className="text-xs">Admin</Badge>}
               <ThemeToggle />
               <Button variant="ghost" size="icon" onClick={logout} data-testid="button-logout">
                 <LogOut className="w-4 h-4" />
@@ -66,9 +65,7 @@ function AuthenticatedApp() {
             </div>
           </header>
           <main className="flex-1 overflow-auto">
-            <Router hook={useHashLocation}>
-              <AppRouter />
-            </Router>
+            <Router hook={useHashLocation}><AppRouter /></Router>
           </main>
         </div>
       </div>
@@ -86,9 +83,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
+        <AuthProvider><AppContent /></AuthProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

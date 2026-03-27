@@ -1,11 +1,10 @@
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import {
-  staff, articles, photos, issues, assignments, channels, messages, announcements,
+  staff, articles, issues, assignments, channels, messages, announcements,
   type Staff, type InsertStaff,
   type Article, type InsertArticle,
-  type Photo, type InsertPhoto,
   type Issue, type InsertIssue,
   type Assignment, type InsertAssignment,
   type Channel, type InsertChannel,
@@ -18,166 +17,76 @@ sqlite.pragma("journal_mode = WAL");
 export const db = drizzle(sqlite);
 
 export interface IStorage {
-  // Staff
   getStaff(): Staff[];
   getStaffById(id: number): Staff | undefined;
   getStaffByEmail(email: string): Staff | undefined;
   createStaff(data: InsertStaff): Staff;
   updateStaff(id: number, data: Partial<InsertStaff>): Staff | undefined;
-
-  // Articles
   getArticles(): Article[];
   getArticleById(id: number): Article | undefined;
   createArticle(data: InsertArticle): Article;
   updateArticle(id: number, data: Partial<InsertArticle>): Article | undefined;
   deleteArticle(id: number): void;
-
-  // Photos
-  getPhotos(): Photo[];
-  getPhotosByArticle(articleId: number): Photo[];
-  createPhoto(data: InsertPhoto): Photo;
-  updatePhoto(id: number, data: Partial<InsertPhoto>): Photo | undefined;
-
-  // Issues
   getIssues(): Issue[];
   getIssueById(id: number): Issue | undefined;
   createIssue(data: InsertIssue): Issue;
   updateIssue(id: number, data: Partial<InsertIssue>): Issue | undefined;
-
-  // Assignments
   getAssignments(): Assignment[];
   createAssignment(data: InsertAssignment): Assignment;
   updateAssignment(id: number, data: Partial<InsertAssignment>): Assignment | undefined;
   deleteAssignment(id: number): void;
-
-  // Channels
   getChannels(): Channel[];
   getChannelById(id: number): Channel | undefined;
   createChannel(data: InsertChannel): Channel;
-
-  // Messages
   getMessagesByChannel(channelId: number): Message[];
   createMessage(data: InsertMessage): Message;
   updateMessage(id: number, data: Partial<InsertMessage>): Message | undefined;
-
-  // Announcements
   getAnnouncements(): Announcement[];
   createAnnouncement(data: InsertAnnouncement): Announcement;
   deleteAnnouncement(id: number): void;
-
-  // Dashboard
   getDashboardStats(): Record<string, number>;
 }
 
 export class DatabaseStorage implements IStorage {
-  getStaff(): Staff[] {
-    return db.select().from(staff).all();
-  }
-  getStaffById(id: number): Staff | undefined {
-    return db.select().from(staff).where(eq(staff.id, id)).get();
-  }
-  getStaffByEmail(email: string): Staff | undefined {
-    return db.select().from(staff).where(eq(staff.email, email)).get();
-  }
-  createStaff(data: InsertStaff): Staff {
-    return db.insert(staff).values(data).returning().get();
-  }
-  updateStaff(id: number, data: Partial<InsertStaff>): Staff | undefined {
-    return db.update(staff).set(data).where(eq(staff.id, id)).returning().get();
-  }
+  getStaff(): Staff[] { return db.select().from(staff).all(); }
+  getStaffById(id: number): Staff | undefined { return db.select().from(staff).where(eq(staff.id, id)).get(); }
+  getStaffByEmail(email: string): Staff | undefined { return db.select().from(staff).where(eq(staff.email, email)).get(); }
+  createStaff(data: InsertStaff): Staff { return db.insert(staff).values(data).returning().get(); }
+  updateStaff(id: number, data: Partial<InsertStaff>): Staff | undefined { return db.update(staff).set(data).where(eq(staff.id, id)).returning().get(); }
 
-  getArticles(): Article[] {
-    return db.select().from(articles).orderBy(desc(articles.submittedAt)).all();
-  }
-  getArticleById(id: number): Article | undefined {
-    return db.select().from(articles).where(eq(articles.id, id)).get();
-  }
-  createArticle(data: InsertArticle): Article {
-    return db.insert(articles).values(data).returning().get();
-  }
-  updateArticle(id: number, data: Partial<InsertArticle>): Article | undefined {
-    return db.update(articles).set(data).where(eq(articles.id, id)).returning().get();
-  }
-  deleteArticle(id: number): void {
-    db.delete(articles).where(eq(articles.id, id)).run();
-  }
+  getArticles(): Article[] { return db.select().from(articles).orderBy(desc(articles.submittedAt)).all(); }
+  getArticleById(id: number): Article | undefined { return db.select().from(articles).where(eq(articles.id, id)).get(); }
+  createArticle(data: InsertArticle): Article { return db.insert(articles).values(data).returning().get(); }
+  updateArticle(id: number, data: Partial<InsertArticle>): Article | undefined { return db.update(articles).set(data).where(eq(articles.id, id)).returning().get(); }
+  deleteArticle(id: number): void { db.delete(articles).where(eq(articles.id, id)).run(); }
 
-  getPhotos(): Photo[] {
-    return db.select().from(photos).orderBy(desc(photos.uploadedAt)).all();
-  }
-  getPhotosByArticle(articleId: number): Photo[] {
-    return db.select().from(photos).where(eq(photos.articleId, articleId)).all();
-  }
-  createPhoto(data: InsertPhoto): Photo {
-    return db.insert(photos).values(data).returning().get();
-  }
-  updatePhoto(id: number, data: Partial<InsertPhoto>): Photo | undefined {
-    return db.update(photos).set(data).where(eq(photos.id, id)).returning().get();
-  }
+  getIssues(): Issue[] { return db.select().from(issues).orderBy(desc(issues.publishDate)).all(); }
+  getIssueById(id: number): Issue | undefined { return db.select().from(issues).where(eq(issues.id, id)).get(); }
+  createIssue(data: InsertIssue): Issue { return db.insert(issues).values(data).returning().get(); }
+  updateIssue(id: number, data: Partial<InsertIssue>): Issue | undefined { return db.update(issues).set(data).where(eq(issues.id, id)).returning().get(); }
 
-  getIssues(): Issue[] {
-    return db.select().from(issues).orderBy(desc(issues.publishDate)).all();
-  }
-  getIssueById(id: number): Issue | undefined {
-    return db.select().from(issues).where(eq(issues.id, id)).get();
-  }
-  createIssue(data: InsertIssue): Issue {
-    return db.insert(issues).values(data).returning().get();
-  }
-  updateIssue(id: number, data: Partial<InsertIssue>): Issue | undefined {
-    return db.update(issues).set(data).where(eq(issues.id, id)).returning().get();
-  }
+  getAssignments(): Assignment[] { return db.select().from(assignments).orderBy(desc(assignments.createdAt)).all(); }
+  createAssignment(data: InsertAssignment): Assignment { return db.insert(assignments).values(data).returning().get(); }
+  updateAssignment(id: number, data: Partial<InsertAssignment>): Assignment | undefined { return db.update(assignments).set(data).where(eq(assignments.id, id)).returning().get(); }
+  deleteAssignment(id: number): void { db.delete(assignments).where(eq(assignments.id, id)).run(); }
 
-  getAssignments(): Assignment[] {
-    return db.select().from(assignments).orderBy(desc(assignments.createdAt)).all();
-  }
-  createAssignment(data: InsertAssignment): Assignment {
-    return db.insert(assignments).values(data).returning().get();
-  }
-  updateAssignment(id: number, data: Partial<InsertAssignment>): Assignment | undefined {
-    return db.update(assignments).set(data).where(eq(assignments.id, id)).returning().get();
-  }
-  deleteAssignment(id: number): void {
-    db.delete(assignments).where(eq(assignments.id, id)).run();
-  }
+  getChannels(): Channel[] { return db.select().from(channels).all(); }
+  getChannelById(id: number): Channel | undefined { return db.select().from(channels).where(eq(channels.id, id)).get(); }
+  createChannel(data: InsertChannel): Channel { return db.insert(channels).values(data).returning().get(); }
 
-  getChannels(): Channel[] {
-    return db.select().from(channels).all();
-  }
-  getChannelById(id: number): Channel | undefined {
-    return db.select().from(channels).where(eq(channels.id, id)).get();
-  }
-  createChannel(data: InsertChannel): Channel {
-    return db.insert(channels).values(data).returning().get();
-  }
+  getMessagesByChannel(channelId: number): Message[] { return db.select().from(messages).where(eq(messages.channelId, channelId)).orderBy(messages.createdAt).all(); }
+  createMessage(data: InsertMessage): Message { return db.insert(messages).values(data).returning().get(); }
+  updateMessage(id: number, data: Partial<InsertMessage>): Message | undefined { return db.update(messages).set(data).where(eq(messages.id, id)).returning().get(); }
 
-  getMessagesByChannel(channelId: number): Message[] {
-    return db.select().from(messages).where(eq(messages.channelId, channelId)).orderBy(messages.createdAt).all();
-  }
-  createMessage(data: InsertMessage): Message {
-    return db.insert(messages).values(data).returning().get();
-  }
-  updateMessage(id: number, data: Partial<InsertMessage>): Message | undefined {
-    return db.update(messages).set(data).where(eq(messages.id, id)).returning().get();
-  }
-
-  getAnnouncements(): Announcement[] {
-    return db.select().from(announcements).orderBy(desc(announcements.createdAt)).all();
-  }
-  createAnnouncement(data: InsertAnnouncement): Announcement {
-    return db.insert(announcements).values(data).returning().get();
-  }
-  deleteAnnouncement(id: number): void {
-    db.delete(announcements).where(eq(announcements.id, id)).run();
-  }
+  getAnnouncements(): Announcement[] { return db.select().from(announcements).orderBy(desc(announcements.createdAt)).all(); }
+  createAnnouncement(data: InsertAnnouncement): Announcement { return db.insert(announcements).values(data).returning().get(); }
+  deleteAnnouncement(id: number): void { db.delete(announcements).where(eq(announcements.id, id)).run(); }
 
   getDashboardStats() {
     const allArticles = db.select().from(articles).all();
     const allStaff = db.select().from(staff).where(eq(staff.active, true)).all();
     const allAssignments = db.select().from(assignments).all();
     const allIssues = db.select().from(issues).all();
-    const allAnnouncements = db.select().from(announcements).all();
-
     return {
       totalArticles: allArticles.length,
       submittedArticles: allArticles.filter(a => a.status === "submitted").length,
@@ -187,7 +96,6 @@ export class DatabaseStorage implements IStorage {
       totalStaff: allStaff.length,
       activeAssignments: allAssignments.filter(a => a.status !== "complete").length,
       upcomingIssues: allIssues.filter(i => i.status !== "published").length,
-      totalAnnouncements: allAnnouncements.length,
     };
   }
 }

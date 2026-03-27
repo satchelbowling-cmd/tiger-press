@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import Anthropic from "@anthropic-ai/sdk";
 import { storage } from "./storage";
 import {
-  insertStaffSchema, insertArticleSchema, insertPhotoSchema,
+  insertStaffSchema, insertArticleSchema,
   insertIssueSchema, insertAssignmentSchema, insertMessageSchema,
   insertAnnouncementSchema,
 } from "@shared/schema";
@@ -230,22 +230,6 @@ export async function registerRoutes(server: Server, app: Express) {
       console.error("Proofread error:", err.message);
       res.status(500).json({ error: "Proofreading failed: " + (err.message || "Unknown error") });
     }
-  });
-
-  // ─── Photos ───
-  app.get("/api/photos", (_req, res) => res.json(storage.getPhotos()));
-  app.get("/api/photos/article/:articleId", (req, res) => {
-    res.json(storage.getPhotosByArticle(Number(req.params.articleId)));
-  });
-  app.post("/api/photos", (req, res) => {
-    const parsed = insertPhotoSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: parsed.error.message });
-    res.status(201).json(storage.createPhoto(parsed.data));
-  });
-  app.patch("/api/photos/:id", (req, res) => {
-    const p = storage.updatePhoto(Number(req.params.id), req.body);
-    if (!p) return res.status(404).json({ error: "Not found" });
-    res.json(p);
   });
 
   // ─── Issues ───

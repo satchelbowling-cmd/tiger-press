@@ -56,6 +56,7 @@ export default function UploadPage() {
         content,
         category,
         priority,
+        targetWordCount: (document.getElementById("targetWordCount") as HTMLInputElement)?.value ? Number((document.getElementById("targetWordCount") as HTMLInputElement).value) : null,
         tags: tagsArray.length > 0 ? JSON.stringify(tagsArray) : null,
         authorId: authorId ? Number(authorId) : (user?.id ?? null),
         editorId: null,
@@ -293,6 +294,16 @@ export default function UploadPage() {
                     {upcomingIssues.map(i => <SelectItem key={i.id} value={String(i.id)}>{i.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label className="text-xs">Word Count Target</Label>
+                <Input
+                  type="number" min="0" step="50"
+                  placeholder="e.g. 500"
+                  className="mt-1" data-testid="input-upload-wordtarget"
+                  id="targetWordCount"
+                />
               </div>
 
               <div>

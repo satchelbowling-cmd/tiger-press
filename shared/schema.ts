@@ -2,16 +2,21 @@ import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Staff members (with auth)
+// Staff members
 export const staff = sqliteTable("staff", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  password: text("password").notNull().default(""), // hashed
+  password: text("password").notNull().default(""),
   role: text("role").notNull(), // writer, editor, photographer, editor-in-chief, designer
-  section: text("section"), // news, opinion, sports, arts, campus-life (for group chat assignment)
+  section: text("section"), // news, opinion, sports, arts, campus-life
   avatarInitials: text("avatar_initials").notNull(),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
+  // Profile fields
+  bio: text("bio"),
+  classYear: text("class_year"), // e.g. "2027"
+  preferredSections: text("preferred_sections"), // JSON array: ["news","opinion",...]
+  assignmentFrequency: text("assignment_frequency"), // "2-weeks", "monthly", "bimonthly"
 });
 
 // Articles
@@ -26,29 +31,18 @@ export const articles = sqliteTable("articles", {
   proofreadContent: text("proofread_content"),
   changeLog: text("change_log"),
   wordCount: integer("word_count").notNull().default(0),
+  targetWordCount: integer("target_word_count"), // word count target
   submittedAt: text("submitted_at").notNull(),
   deadline: text("deadline"),
   issueDate: text("issue_date"),
   notes: text("notes"),
-  // Upload metadata
   originalFilename: text("original_filename"),
-  fileType: text("file_type"), // docx, md, txt, paste
-  tags: text("tags"), // JSON array of tags
-  priority: text("priority").default("normal"), // low, normal, high, urgent
+  fileType: text("file_type"),
+  tags: text("tags"),
+  priority: text("priority").default("normal"),
 });
 
-// Photos
-export const photos = sqliteTable("photos", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  articleId: integer("article_id").references(() => articles.id),
-  photographerId: integer("photographer_id").references(() => staff.id),
-  caption: text("caption"),
-  filename: text("filename").notNull(),
-  status: text("status").notNull().default("pending"),
-  uploadedAt: text("uploaded_at").notNull(),
-});
-
-// Issues (newspaper editions)
+// Issues
 export const issues = sqliteTable("issues", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   title: text("title").notNull(),
@@ -71,12 +65,12 @@ export const assignments = sqliteTable("assignments", {
   createdAt: text("created_at").notNull(),
 });
 
-// Chat channels (section chats + all-staff)
+// Chat channels
 export const channels = sqliteTable("channels", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  type: text("type").notNull(), // section, all-staff
-  section: text("section"), // null for all-staff, otherwise news/opinion/sports/arts/campus-life
+  type: text("type").notNull(),
+  section: text("section"),
   createdAt: text("created_at").notNull(),
 });
 
@@ -90,20 +84,19 @@ export const messages = sqliteTable("messages", {
   createdAt: text("created_at").notNull(),
 });
 
-// Announcements (editor-in-chief only)
+// Announcements
 export const announcements = sqliteTable("announcements", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   authorId: integer("author_id").references(() => staff.id).notNull(),
   title: text("title").notNull(),
   content: text("content").notNull(),
-  priority: text("priority").notNull().default("normal"), // normal, important, urgent
+  priority: text("priority").notNull().default("normal"),
   createdAt: text("created_at").notNull(),
 });
 
 // Insert schemas
 export const insertStaffSchema = createInsertSchema(staff).omit({ id: true });
 export const insertArticleSchema = createInsertSchema(articles).omit({ id: true });
-export const insertPhotoSchema = createInsertSchema(photos).omit({ id: true });
 export const insertIssueSchema = createInsertSchema(issues).omit({ id: true });
 export const insertAssignmentSchema = createInsertSchema(assignments).omit({ id: true });
 export const insertChannelSchema = createInsertSchema(channels).omit({ id: true });
@@ -115,8 +108,6 @@ export type InsertStaff = z.infer<typeof insertStaffSchema>;
 export type Staff = typeof staff.$inferSelect;
 export type InsertArticle = z.infer<typeof insertArticleSchema>;
 export type Article = typeof articles.$inferSelect;
-export type InsertPhoto = z.infer<typeof insertPhotoSchema>;
-export type Photo = typeof photos.$inferSelect;
 export type InsertIssue = z.infer<typeof insertIssueSchema>;
 export type Issue = typeof issues.$inferSelect;
 export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;

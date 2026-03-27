@@ -13,14 +13,14 @@ async function seed() {
 
   // Seed staff (with hashed passwords)
   const staffData = [
-    { name: "Satchel Bowling", email: "newspaper@hsc.edu", password: hashedPassword, role: "editor-in-chief", section: null, avatarInitials: "SB", active: true },
-    { name: "James Mitchell", email: "jmitchell@hsc.edu", password: hashedPassword, role: "editor", section: "news", avatarInitials: "JM", active: true },
-    { name: "William Carter", email: "wcarter@hsc.edu", password: hashedPassword, role: "writer", section: "news", avatarInitials: "WC", active: true },
-    { name: "Thomas Reed", email: "treed@hsc.edu", password: hashedPassword, role: "writer", section: "opinion", avatarInitials: "TR", active: true },
-    { name: "Andrew Phillips", email: "aphillips@hsc.edu", password: hashedPassword, role: "photographer", section: "sports", avatarInitials: "AP", active: true },
-    { name: "Robert Hayes", email: "rhayes@hsc.edu", password: hashedPassword, role: "writer", section: "sports", avatarInitials: "RH", active: true },
-    { name: "Daniel Foster", email: "dfoster@hsc.edu", password: hashedPassword, role: "designer", section: "arts", avatarInitials: "DF", active: true },
-    { name: "Christopher Lane", email: "clane@hsc.edu", password: hashedPassword, role: "editor", section: "campus-life", avatarInitials: "CL", active: true },
+    { name: "Satchel Bowling", email: "newspaper@hsc.edu", password: hashedPassword, role: "editor-in-chief", section: null, avatarInitials: "SB", active: true, bio: "Editor-in-Chief of The Tiger", classYear: "2026", preferredSections: JSON.stringify(["news", "opinion"]), assignmentFrequency: "2-weeks" },
+    { name: "James Mitchell", email: "jmitchell@hsc.edu", password: hashedPassword, role: "editor", section: "news", avatarInitials: "JM", active: true, bio: "News section editor", classYear: "2027", preferredSections: JSON.stringify(["news"]), assignmentFrequency: "2-weeks" },
+    { name: "William Carter", email: "wcarter@hsc.edu", password: hashedPassword, role: "writer", section: "news", avatarInitials: "WC", active: true, classYear: "2028", preferredSections: JSON.stringify(["news", "life"]), assignmentFrequency: "monthly" },
+    { name: "Thomas Reed", email: "treed@hsc.edu", password: hashedPassword, role: "writer", section: "opinion", avatarInitials: "TR", active: true, classYear: "2027", preferredSections: JSON.stringify(["opinion"]), assignmentFrequency: "2-weeks" },
+    { name: "Andrew Phillips", email: "aphillips@hsc.edu", password: hashedPassword, role: "photographer", section: "sports", avatarInitials: "AP", active: true, classYear: "2028", preferredSections: JSON.stringify(["other"]), assignmentFrequency: "bimonthly" },
+    { name: "Robert Hayes", email: "rhayes@hsc.edu", password: hashedPassword, role: "writer", section: "sports", avatarInitials: "RH", active: true, classYear: "2026", preferredSections: JSON.stringify(["news", "life"]), assignmentFrequency: "monthly" },
+    { name: "Daniel Foster", email: "dfoster@hsc.edu", password: hashedPassword, role: "designer", section: "arts", avatarInitials: "DF", active: true, classYear: "2027", preferredSections: JSON.stringify(["other"]), assignmentFrequency: "bimonthly" },
+    { name: "Christopher Lane", email: "clane@hsc.edu", password: hashedPassword, role: "editor", section: "campus-life", avatarInitials: "CL", active: true, bio: "Campus Life editor", classYear: "2026", preferredSections: JSON.stringify(["life"]), assignmentFrequency: "2-weeks" },
   ];
 
   const createdStaff = staffData.map(s => db.insert(staff).values(s).returning().get());
